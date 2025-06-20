@@ -35,18 +35,14 @@ class AssignmentOut(AssignmentCreate):
     id: str
     assigned_at: datetime
 
-# User schemas
-class UserCreate(BaseModel):
+# User schemas (for superusers only)
+class SuperuserCreate(BaseModel):
     name: Optional[str] = None
     email: EmailStr
     phone: str
     password: str
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
-class UserOut(BaseModel):
+class SuperuserOut(BaseModel):
     id: str
     name: Optional[str]
     email: EmailStr
@@ -55,6 +51,19 @@ class UserOut(BaseModel):
     created_at: datetime
     class Config:
         orm_mode = True
+
+# Patient signup schemas
+class PatientSignup(BaseModel):
+    name: str
+    email: EmailStr
+    phone: str
+    gender: Optional[str] = None
+    location: Optional[str] = None
+    password: str
+
+class PatientLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 # OTP schemas
 class OTPRequest(BaseModel):
@@ -96,6 +105,14 @@ class DoctorApproval(BaseModel):
     approval_status: str  # 'approved' or 'rejected'
     approval_notes: str = ''
 
+class DoctorCertificateOut(BaseModel):
+    id: str
+    title: str
+    file_path: str
+    uploaded_at: datetime
+    class Config:
+        orm_mode = True
+
 class DoctorOut(BaseModel):
     id: str
     name: str
@@ -110,6 +127,7 @@ class DoctorOut(BaseModel):
     approval_notes: str | None = None
     is_approved: bool
     created_at: datetime
+    certificates: list[DoctorCertificateOut] = []
     class Config:
         from_attributes = True
 
@@ -134,3 +152,47 @@ class AppointmentOut(BaseModel):
     created_at: datetime
     class Config:
         from_attributes = True
+
+# Add a unified login response schema
+class LoginResponse(BaseModel):
+    role: str  # 'superuser', 'doctor', 'patient'
+    token: str
+    user: dict  # PatientOut, DoctorOut, or SuperuserOut
+
+class UserOut(BaseModel):
+    id: str
+    name: Optional[str]
+    email: EmailStr
+    phone: str
+    is_verified: bool
+    role: str
+    created_at: datetime
+    class Config:
+        orm_mode = True
+
+class UserCreate(BaseModel):
+    name: Optional[str] = None
+    email: EmailStr
+    phone: str
+    password: str
+    role: str = "patient"  # 'superuser', 'doctor', 'patient'
+
+# Payment schemas
+class AppointmentPaymentRequest(BaseModel):
+    appointment_id: str
+    phone_number: str
+
+class NotificationOut(BaseModel):
+    id: str
+    user_id: Optional[str]
+    message: str
+    type: Optional[str]
+    is_read: bool
+    created_at: datetime
+    class Config:
+        orm_mode = True
+
+class NotificationCreate(BaseModel):
+    user_id: Optional[str] = None
+    message: str
+    type: Optional[str] = None

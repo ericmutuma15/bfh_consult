@@ -1,6 +1,7 @@
 import os
-from app.models import Service, Doctor
+from app.models import Service, Doctor, User
 from app.__init__ import SessionLocal, init_db
+from app.utils import get_password_hash
 from datetime import datetime
 
 def seed_services():
@@ -34,8 +35,28 @@ def seed_doctors():
     db.commit()
     db.close()
 
+def seed_superuser():
+    db = SessionLocal()
+    superuser_email = "super@yourdomain.com"
+    if not db.query(User).filter(User.email == superuser_email).first():
+        superuser = User(
+            name="Super Admin",
+            email=superuser_email,
+            phone="0700000000",
+            password_hash=get_password_hash("12345"),
+            is_verified=True,
+            role="superuser"
+        )
+        db.add(superuser)
+        db.commit()
+        print("Superuser created.")
+    else:
+        print("Superuser already exists.")
+    db.close()
+
 if __name__ == "__main__":
     init_db()
     seed_services()
     seed_doctors()
+    seed_superuser()
     print("Seeding complete.")

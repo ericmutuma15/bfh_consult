@@ -8,17 +8,20 @@ from datetime import datetime, timedelta
 import smtplib
 from email.mime.text import MIMEText
 import requests as http_requests
+from passlib.context import CryptContext
 
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
 ALGORITHM = "HS256"
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 # Password hashing
 
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
 
 def verify_password(password: str, hash_: str) -> bool:
-    return hash_password(password) == hash_
+    return pwd_context.verify(password, hash_)
 
 # JWT
 
@@ -73,3 +76,20 @@ def send_otp_stub(destination: str, code: str, type_: str):
         send_sms_otp(destination, code)
     else:
         print(f"[DEV] OTP to {destination}: {code}")
+
+def send_notification_email(to_email: str, subject: str, message: str):
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
+    if not (smtp_host and smtp_user and smtp_pass):
+        print(f"[DEV] Notification email to {to_email}: {subject}\n{message}")
+        return
+    msg = MIMEText(message)
+    msg["Subject"] = subject
+    msg["From"] = smtp_user
+    msg["To"] = to_email
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(smtp_user, [to_email], msg.as_string())

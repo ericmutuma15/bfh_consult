@@ -92,6 +92,7 @@ class Doctor(Base):
     approval_notes = Column(String, nullable=True)
     is_approved = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.utcnow())
+    certificates = relationship("DoctorCertificate", back_populates="doctor", cascade="all, delete-orphan")
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -106,3 +107,21 @@ class Appointment(Base):
     payment_status = Column(String, default="pending")
     created_at = Column(DateTime, default=lambda: datetime.utcnow())
     user = relationship("User", back_populates="appointments")
+
+class DoctorCertificate(Base):
+    __tablename__ = "doctor_certificates"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    doctor_id = Column(String, ForeignKey("doctors.id"))
+    title = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)
+    uploaded_at = Column(DateTime, default=lambda: datetime.utcnow())
+    doctor = relationship("Doctor", back_populates="certificates")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=True)  # null for broadcast
+    message = Column(String, nullable=False)
+    type = Column(String, nullable=True)  # e.g. 'doctor_approval', 'appointment', 'event'
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.utcnow())
